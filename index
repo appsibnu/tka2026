@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard TKA 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Tambahkan library SheetJS untuk memproses file Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            /* Latar belakang gradasi biru profesional */
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* Efek Kaca (Glassmorphism) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        /* Input Token Khusus */
+        .token-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            text-align: center;
+            color: #fbbf24; /* Kuning Amber */
+            text-transform: uppercase;
+            width: 100%;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+        .token-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            text-shadow: none;
+        }
+        /* Hilangkan panah pada input number */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        /* Custom Scrollbar untuk pengaturan */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        /* Light Mode Overrides */
+        body.light-mode {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f8fafc 50%, #e0f2fe 100%);
+            color: #0f172a;
+        }
+        body.light-mode .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
+        }
+        body.light-mode .text-white { color: #0f172a !important; }
+        body.light-mode .text-white\/80 { color: rgba(15, 23, 42, 0.8) !important; }
+        body.light-mode .text-white\/60 { color: rgba(15, 23, 42, 0.6) !important; }
+        body.light-mode .text-white\/50 { color: rgba(15, 23, 42, 0.5) !important; }
+        body.light-mode .text-blue-100 { color: #1e3a8a !important; }
+        body.light-mode .text-blue-200 { color: #1d4ed8 !important; }
+        body.light-mode .border-white\/10 { border-color: rgba(0, 0, 0, 0.1) !important; }
+        body.light-mode .border-white\/30 { border-color: rgba(0, 0, 0, 0.2) !important; }
+        body.light-mode .bg-white\/10 { background-color: rgba(0, 0, 0, 0.05) !important; }
+        body.light-mode .token-input { color: #b45309; text-shadow: none; }
+        body.light-mode .token-input::placeholder { color: rgba(15, 23, 42, 0.3); }
+        
+        body.light-mode #credits-text { background-color: rgba(255, 255, 255, 0.6); color: #0f172a; border-color: rgba(0, 0, 0, 0.1); }
+        
+        body.light-mode #settings-modal .bg-slate-800 { background-color: #ffffff; border-color: #cbd5e1; }
+        body.light-mode #settings-modal .bg-slate-700\/50 { background-color: #f1f5f9; border-color: #cbd5e1; }
+        body.light-mode #settings-modal .border-slate-600 { border-color: #cbd5e1; }
+        body.light-mode #settings-modal input { background-color: #f8fafc !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+        body.light-mode #settings-modal .bg-slate-700 { background-color: #e2e8f0; color: #1e293b; }
+        body.light-mode #settings-modal .bg-slate-900 { background-color: #f8fafc; border-color: #cbd5e1; }
+        body.light-mode #settings-modal .text-slate-300 { color: #334155 !important; }
+        body.light-mode #settings-modal .text-slate-400 { color: #475569 !important; }
+        body.light-mode #settings-modal .hover\:bg-slate-700\/30:hover { background-color: #f1f5f9; }
+        body.light-mode #settings-modal button.text-slate-400:hover { color: #0f172a !important; }
+        body.light-mode input[type="time"]::-webkit-calendar-picker-indicator { filter: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8">
+
+    <!-- HEADER -->
+    <header class="glass-panel rounded-3xl p-4 md:p-6 flex justify-between items-center mb-6 z-10">
+        <!-- Logo Kiri -->
+        <div class="w-24 md:w-32 lg:w-40 flex-shrink-0 flex justify-center items-center">
+            <!-- Menggunakan onerror sebagai fallback jika URL gambar diblokir -->
+            <img src="https://iili.io/Bks6asa.png" 
+                 onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg/800px-Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg.png'"
+                 alt="Logo Tut Wuri" class="max-h-20 md:max-h-28 lg:max-h-36 object-contain">
+        </div>
+
+        <!-- Teks Tengah -->
+        <div class="text-center flex-1 px-4">
+            <h1 class="text-2xl md:text-5xl lg:text-[4vw] font-bold tracking-wider text-blue-100 drop-shadow-lg leading-tight">
+                TES KEMAMPUAN AKADEMIK (TKA)
+            </h1>
+            <h2 id="display-nama-sekolah" class="text-xl md:text-4xl lg:text-[2.5vw] font-semibold text-white mt-2 drop-shadow-md">
+                Nama Sekolah
+            </h2>
+            <h3 class="text-lg md:text-2xl lg:text-[1.5vw] font-bold text-amber-400 mt-1 tracking-widest">
+                TAHUN 2026
+            </h3>
+            
+            <!-- Tempat Kata Motivasi -->
+            <div class="mt-3 md:mt-4 h-6 md:h-8 flex justify-center items-center">
+                <p id="motivasi-text" class="text-sm md:text-lg lg:text-[1.1vw] italic text-white/80 font-medium transition-opacity duration-500 opacity-100">
+                    "Memuat kata motivasi..."
+                </p>
+            </div>
+        </div>
+
+        <!-- Logo Kanan -->
+        <div class="w-24 md:w-32 lg:w-40 flex-shrink-0 flex justify-center items-center bg-white rounded-2xl p-2 h-20 md:h-28 lg:h-36">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRiP195kdR70aOxSqIR55S7iKp73XOGAx-OxA&s" 
+                 alt="Logo TKA" class="max-h-full object-contain">
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 z-10 h-full">
+        
+        <!-- BAGIAN TOKEN (Kiri / Atas) -->
+        <div class="lg:col-span-7 glass-panel rounded-3xl p-8 flex flex-col justify-center items-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full p-4 bg-white/10 text-center rounded-t-3xl border-b border-white/10">
+                <span class="text-2xl lg:text-[2vw] font-bold tracking-[0.3em] text-white/80">KODE TOKEN UJIAN</span>
+            </div>
+            
+            <div class="w-full mt-12 flex justify-center items-center">
+                <input type="text" id="token-input" placeholder="--------" maxlength="8" 
+                       class="token-input font-mono text-[15vw] md:text-[12vw] lg:text-[10vw] font-bold uppercase"
+                       autocomplete="off" spellcheck="false">
+            </div>
+            <p class="text-white/50 text-center mt-4 text-sm lg:text-base">*Ketik langsung pada kolom di atas</p>
+        </div>
+
+        <!-- BAGIAN DATA & WAKTU (Kanan / Bawah) -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Info Sesi Terkini -->
+            <div class="glass-panel rounded-3xl p-6 flex-1 flex flex-col justify-center border-t-4 border-amber-400">
+                <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                    <div class="col-span-2 text-center pb-4 border-b border-white/10">
+                        <div class="text-white/60 text-sm md:text-lg lg:text-[1vw] uppercase tracking-wider mb-1">Hari, Tanggal</div>
+                        <div id="display-tanggal" class="font-bold text-xl md:text-3xl lg:text-[2vw] text-blue-200">Memuat...</div>
+                    </div>
+                    
+                    <div class="text-center border-r border-white/10 pr-2">
+                        <div class="text-white/60 text-sm md:text-lg lg:text-[1vw] uppercase tracking-wider mb-1">Gelombang</div>
+                        <div id="display-gelombang" class="font-bold text-2xl md:text-4xl lg:text-[3vw] text-white">-</div>
+                    </div>
+                    
+                    <div class="text-center pl-2">
+                        <div class="text-white/60 text-sm md:text-lg lg:text-[1vw] uppercase tracking-wider mb-1">Sesi</div>
+                        <div id="display-sesi" class="font-bold text-2xl md:text-4xl lg:text-[3vw] text-white">-</div>
+                    </div>
+
+                    <div class="col-span-2 text-center pt-4 border-t border-white/10">
+                        <div class="text-white/60 text-sm md:text-lg lg:text-[1vw] uppercase tracking-wider mb-1">Jam Pelaksanaan</div>
+                        <div id="display-jam" class="font-bold text-xl md:text-3xl lg:text-[2vw] text-white">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Countdown Timer -->
+            <div class="glass-panel rounded-3xl p-6 flex-1 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                <!-- Realtime Clock -->
+                <div class="absolute top-4 right-6 text-white/50 font-mono text-xl" id="realtime-clock">00:00:00</div>
+
+                <h3 id="countdown-label" class="text-xl lg:text-[1.5vw] text-white/80 uppercase tracking-widest mb-2 mt-4">SISA WAKTU UJIAN</h3>
+                <div id="display-countdown" class="font-mono font-bold text-[10vw] md:text-[8vw] lg:text-[5.5vw] text-amber-400 leading-none drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                    00:00:00
+                </div>
+                <div id="countdown-status" class="mt-4 text-red-400 font-bold text-xl lg:text-2xl hidden blink">WAKTU HABIS</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- KREDIT PEMBUAT -->
+    <div class="fixed bottom-6 left-6 z-50 text-white/50 text-sm font-semibold tracking-wide bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10 transition-colors shadow-lg" id="credits-text">
+        by : Ibnu Khoiri (082385938177)
+    </div>
+
+    <!-- TOMBOL TEMA (MODE TERANG/GELAP) -->
+    <button onclick="toggleTheme()" id="theme-btn" class="fixed bottom-6 right-28 w-16 h-16 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex justify-center items-center text-white shadow-2xl transition-all duration-300 hover:scale-110 z-50 group">
+        <i class="ph ph-sun text-3xl group-hover:text-amber-400 transition-colors"></i>
+    </button>
+
+    <!-- TOMBOL PENGATURAN DI SUDUT BAWAH -->
+    <button onclick="toggleSettings()" class="fixed bottom-6 right-6 w-16 h-16 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-full flex justify-center items-center text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-90 z-50 group">
+        <i class="ph ph-gear text-3xl group-hover:text-amber-400 transition-colors"></i>
+    </button>
+
+    <!-- MODAL PENGATURAN (Hidden by default) -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[100] hidden flex-col justify-center items-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-600 rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="bg-slate-700/50 p-6 flex justify-between items-center border-b border-slate-600">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                    <i class="ph ph-sliders-horizontal text-amber-400"></i> Pengaturan Dashboard
+                </h2>
+                <button onclick="toggleSettings()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="ph ph-x text-3xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto flex-1">
+                <!-- Setting Nama Sekolah -->
+                <div class="mb-8">
+                    <label class="block text-slate-300 text-sm font-bold mb-2 uppercase tracking-wider">Nama Sekolah / Instansi</label>
+                    <input type="text" id="input-sekolah" class="w-full bg-slate-900 border border-slate-600 text-white rounded-xl py-3 px-4 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all text-lg" placeholder="Contoh: SMA NEGERI 1 INDONESIA">
+                </div>
+
+                <!-- Setting Jadwal -->
+                <div>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
+                        <label class="block text-slate-300 text-sm font-bold uppercase tracking-wider">Data Jadwal Pelaksanaan</label>
+                        
+                        <!-- Grup Tombol Excel & Tambah -->
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="downloadTemplate()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-3 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                <i class="ph ph-download-simple text-lg"></i> Template
+                            </button>
+                            
+                            <!-- Input File Tersembunyi -->
+                            <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                            <button onclick="document.getElementById('excel-upload').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                <i class="ph ph-file-xls text-lg"></i> Import Excel
+                            </button>
+
+                            <button onclick="addScheduleRow()" class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                <i class="ph ph-plus-circle text-lg"></i> Tambah Manual
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-600">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-700 text-slate-300 text-sm uppercase">
+                                    <th class="p-3 border-b border-slate-600 text-center w-12">No</th>
+                                    <th class="p-3 border-b border-slate-600">Tanggal</th>
+                                    <th class="p-3 border-b border-slate-600 text-center">Gel.</th>
+                                    <th class="p-3 border-b border-slate-600 text-center">Sesi</th>
+                                    <th class="p-3 border-b border-slate-600 text-center">Jam Mulai</th>
+                                    <th class="p-3 border-b border-slate-600 text-center">Jam Selesai</th>
+                                    <th class="p-3 border-b border-slate-600 text-center w-16">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-body" class="bg-slate-800">
+                                <!-- Baris tabel akan diisi oleh JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-slate-400 text-xs mt-3">* Sistem akan otomatis mencocokkan waktu komputer Anda dengan tabel di atas untuk menampilkan Sesi, Gelombang, dan Timer.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-700/50 p-6 border-t border-slate-600 flex justify-end gap-4">
+                <button onclick="toggleSettings()" class="px-6 py-3 rounded-xl font-bold text-slate-300 hover:text-white hover:bg-slate-600 transition-colors">
+                    Batal
+                </button>
+                <button onclick="saveSettings()" class="px-6 py-3 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20">
+                    <i class="ph ph-floppy-disk text-xl"></i> Simpan Pengaturan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+
+    <script>
+        // --- State Management ---
+        let appState = {
+            namaSekolah: "NAMA SEKOLAH BELUM DIATUR",
+            token: "",
+            schedules: [],
+            theme: "dark"
+        };
+
+        const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        // --- Daftar Kata Motivasi ---
+        const kataMotivasi = [
+            "\"Keberhasilan adalah kepunyaan mereka yang senantiasa berusaha.\"",
+            "\"Pendidikan adalah senjata paling ampuh untuk mengubah dunia.\"",
+            "\"Masa depan adalah milik mereka yang menyiapkannya hari ini.\"",
+            "\"Hasil tidak akan pernah mengkhianati sebuah proses dan usaha.\"",
+            "\"Fokuslah pada tujuanmu, bukan pada hambatan di depanmu.\"",
+            "\"Satu langkah kecil hari ini adalah awal dari perjalanan besar esok hari.\"",
+            "\"Kejujuran dan ketekunan adalah kunci utama kesuksesan.\"",
+            "\"Jangan berhenti saat lelah, berhentilah saat kamu selesai.\"",
+            "\"Percayalah pada dirimu sendiri, kamu lebih hebat dari yang kamu bayangkan.\""
+        ];
+        let currentQuoteIndex = 0;
+
+        // --- Inisialisasi Aplikasi ---
+        function initApp() {
+            loadSettings();
+            applySettingsToUI();
+            
+            // Setel mode tema awal
+            if (appState.theme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+            updateThemeIcon();
+            
+            // Set up kata motivasi awal & timer rotasi (60000ms = 1 menit)
+            updateQuoteText();
+            setInterval(rotateQuote, 60000);
+            
+            // Event listener untuk input token (menyimpan otomatis saat diketik)
+            const tokenInput = document.getElementById('token-input');
+            tokenInput.value = appState.token;
+            tokenInput.addEventListener('input', (e) => {
+                appState.token = e.target.value.toUpperCase();
+                localStorage.setItem('tka_token', appState.token);
+            });
+
+            // Mulai loop waktu (berjalan setiap 1 detik)
+            setInterval(engineLoop, 1000);
+            engineLoop(); // Panggil sekali langsung agar tidak nunggu 1 detik awal
+        }
+
+        // --- Load & Save Data (LocalStorage) ---
+        function loadSettings() {
+            const savedSekolah = localStorage.getItem('tka_sekolah');
+            const savedSchedules = localStorage.getItem('tka_schedules');
+            const savedToken = localStorage.getItem('tka_token');
+            const savedTheme = localStorage.getItem('tka_theme');
+
+            if (savedSekolah) appState.namaSekolah = savedSekolah;
+            if (savedToken) appState.token = savedToken;
+            if (savedTheme) appState.theme = savedTheme;
+            
+            if (savedSchedules) {
+                try {
+                    appState.schedules = JSON.parse(savedSchedules);
+                } catch (e) {
+                    appState.schedules = getDefaultSchedules();
+                }
+            } else {
+                appState.schedules = getDefaultSchedules();
+            }
+        }
+
+        function saveSettings() {
+            // Ambil nama sekolah
+            appState.namaSekolah = document.getElementById('input-sekolah').value.trim() || "NAMA SEKOLAH";
+            
+            // Ambil data dari tabel
+            const rows = document.querySelectorAll('#schedule-body tr');
+            const newSchedules = [];
+            
+            rows.forEach((row) => {
+                const date = row.querySelector('.inp-date').value;
+                const gel = row.querySelector('.inp-gel').value;
+                const sesi = row.querySelector('.inp-sesi').value;
+                const start = row.querySelector('.inp-start').value;
+                const end = row.querySelector('.inp-end').value;
+
+                if (date && start && end) {
+                    newSchedules.push({ date, gelombang: gel, sesi, startTime: start, endTime: end });
+                }
+            });
+
+            // Urutkan berdasarkan tanggal dan jam mulai
+            newSchedules.sort((a, b) => {
+                const dateA = new Date(`${a.date}T${a.startTime}`);
+                const dateB = new Date(`${b.date}T${b.startTime}`);
+                return dateA - dateB;
+            });
+
+            appState.schedules = newSchedules;
+
+            // Simpan ke LocalStorage
+            localStorage.setItem('tka_sekolah', appState.namaSekolah);
+            localStorage.setItem('tka_schedules', JSON.stringify(appState.schedules));
+
+            applySettingsToUI();
+            toggleSettings(); // Tutup modal
+
+            // Tampilkan feedback (opsional)
+            alert("Pengaturan Berhasil Disimpan!");
+            engineLoop(); // Paksa update UI segera
+        }
+
+        function getDefaultSchedules() {
+            // Berikan jadwal dummy untuk hari ini agar user tidak bingung
+            const today = new Date().toISOString().split('T')[0];
+            return [
+                { date: today, gelombang: "1", sesi: "1", startTime: "07:30", endTime: "09:30" },
+                { date: today, gelombang: "1", sesi: "2", startTime: "10:00", endTime: "12:00" }
+            ];
+        }
+
+        // --- UI Updates ---
+        function applySettingsToUI() {
+            document.getElementById('display-nama-sekolah').innerText = appState.namaSekolah.toUpperCase();
+        }
+
+        // --- Engine Utama (Realtime Date/Time & Schedule Matching) ---
+        function engineLoop() {
+            const now = new Date();
+            
+            // 1. Update Jam Kecil di pojok
+            const hoursStr = String(now.getHours()).padStart(2, '0');
+            const minsStr = String(now.getMinutes()).padStart(2, '0');
+            const secsStr = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('realtime-clock').innerText = `${hoursStr}:${minsStr}:${secsStr}`;
+
+            // 2. Format Tanggal Saat Ini (contoh: Rabu, 15 April 2026)
+            const hariStr = HARI[now.getDay()];
+            const tanggalStr = now.getDate();
+            const bulanStr = BULAN[now.getMonth()];
+            const tahunStr = now.getFullYear();
+            const fullDateStr = `${hariStr}, ${tanggalStr} ${bulanStr} ${tahunStr}`;
+            document.getElementById('display-tanggal').innerText = fullDateStr;
+
+            // 3. Cari Jadwal Aktif
+            const activeSchedule = findActiveSchedule(now);
+            updateDashboardData(activeSchedule, now);
+        }
+
+        function findActiveSchedule(now) {
+            const currentDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const currentMs = now.getTime();
+
+            // Cari jadwal pada hari ini
+            const todaysSchedules = appState.schedules.filter(s => s.date === currentDateStr);
+
+            if (todaysSchedules.length === 0) return null;
+
+            for (let i = 0; i < todaysSchedules.length; i++) {
+                const sched = todaysSchedules[i];
+                const startTimeMs = new Date(`${sched.date}T${sched.startTime}:00`).getTime();
+                const endTimeMs = new Date(`${sched.date}T${sched.endTime}:00`).getTime();
+
+                // Kita anggap jadwal aktif jika:
+                // Sekarang sebelum waktu selesai, DAN
+                // Sekarang setelah (waktu mulai dikurangi 1 jam untuk persiapan) atau jika itu adalah sesi pertama.
+                // Logika Sederhana: Jika sekarang < endTimeMs, kita pantau sesi ini.
+                
+                // Cari sesi terdekat yang belum selesai
+                if (currentMs <= endTimeMs) {
+                    return sched;
+                }
+            }
+            
+            // Jika semua sesi hari ini sudah lewat, kembalikan sesi terakhir
+            return todaysSchedules[todaysSchedules.length - 1];
+        }
+
+        function updateDashboardData(schedule, now) {
+            const gelEl = document.getElementById('display-gelombang');
+            const sesiEl = document.getElementById('display-sesi');
+            const jamEl = document.getElementById('display-jam');
+            const cdDisplay = document.getElementById('display-countdown');
+            const cdLabel = document.getElementById('countdown-label');
+            const cdStatus = document.getElementById('countdown-status');
+
+            if (!schedule) {
+                // Tidak ada jadwal sama sekali hari ini
+                gelEl.innerText = "-";
+                sesiEl.innerText = "-";
+                jamEl.innerText = "TIDAK ADA JADWAL";
+                cdLabel.innerText = "TIDAK ADA UJIAN AKTIF";
+                cdDisplay.innerText = "00:00:00";
+                cdDisplay.classList.remove('text-red-500');
+                cdDisplay.classList.add('text-amber-400');
+                cdStatus.classList.add('hidden');
+                return;
+            }
+
+            // Ada jadwal
+            gelEl.innerText = schedule.gelombang;
+            sesiEl.innerText = schedule.sesi;
+            jamEl.innerText = `${schedule.startTime} - ${schedule.endTime}`;
+
+            // Hitung Countdown
+            const startMs = new Date(`${schedule.date}T${schedule.startTime}:00`).getTime();
+            const endMs = new Date(`${schedule.date}T${schedule.endTime}:00`).getTime();
+            const currentMs = now.getTime();
+
+            cdStatus.classList.add('hidden'); // Reset status
+
+            if (currentMs < startMs) {
+                // Belum mulai (Hitung mundur menuju mulai)
+                cdLabel.innerText = "UJIAN DIMULAI DALAM";
+                cdDisplay.classList.remove('text-red-500', 'text-amber-400');
+                cdDisplay.classList.add('text-blue-300'); // Warna biru untuk persiapan
+                displayTimeRemaining(startMs - currentMs, cdDisplay);
+            } 
+            else if (currentMs >= startMs && currentMs <= endMs) {
+                // Sedang berlangsung (Hitung mundur menuju selesai)
+                cdLabel.innerText = "SISA WAKTU PELAKSANAAN";
+                cdDisplay.classList.remove('text-blue-300', 'text-red-500');
+                cdDisplay.classList.add('text-amber-400');
+                
+                const timeLeft = endMs - currentMs;
+                displayTimeRemaining(timeLeft, cdDisplay);
+
+                // Jika sisa waktu < 5 menit, warnai merah
+                if (timeLeft <= 5 * 60 * 1000) {
+                    cdDisplay.classList.remove('text-amber-400');
+                    cdDisplay.classList.add('text-red-500');
+                }
+            } 
+            else {
+                // Sudah Selesai
+                cdLabel.innerText = "STATUS SESI";
+                cdDisplay.innerText = "00:00:00";
+                cdDisplay.classList.remove('text-amber-400', 'text-blue-300');
+                cdDisplay.classList.add('text-red-500');
+                cdStatus.innerText = "WAKTU HABIS / SESI SELESAI";
+                cdStatus.classList.remove('hidden');
+            }
+        }
+
+        function displayTimeRemaining(ms, element) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+
+            const format = num => String(num).padStart(2, '0');
+            element.innerText = `${format(h)}:${format(m)}:${format(s)}`;
+        }
+
+        // --- Fitur Kata Motivasi ---
+        function updateQuoteText() {
+            const quoteEl = document.getElementById('motivasi-text');
+            quoteEl.innerText = kataMotivasi[currentQuoteIndex];
+        }
+
+        function rotateQuote() {
+            const quoteEl = document.getElementById('motivasi-text');
+            // Efek Fade-out
+            quoteEl.classList.remove('opacity-100');
+            quoteEl.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                // Pindah ke kalimat selanjutnya
+                currentQuoteIndex = (currentQuoteIndex + 1) % kataMotivasi.length;
+                updateQuoteText();
+                
+                // Efek Fade-in
+                quoteEl.classList.remove('opacity-0');
+                quoteEl.classList.add('opacity-100');
+            }, 500); // Waktu tunggu sesuai durasi transisi CSS (500ms)
+        }
+
+        // --- Interaksi Modal Pengaturan ---
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            if (modal.classList.contains('hidden')) {
+                // Buka Modal
+                modal.classList.remove('hidden');
+                // Timeout kecil agar transisi opacity jalan
+                setTimeout(() => modal.classList.remove('opacity-0'), 10);
+                populateSettingsForm();
+            } else {
+                // Tutup Modal
+                modal.classList.add('opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 300); // Tunggu transisi selesai
+            }
+        }
+
+        function populateSettingsForm() {
+            document.getElementById('input-sekolah').value = appState.namaSekolah;
+            
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            
+            appState.schedules.forEach((sched, index) => {
+                tbody.insertAdjacentHTML('beforeend', createRowHTML(index, sched));
+            });
+
+            if (appState.schedules.length === 0) {
+                addScheduleRow(); // Tambah minimal 1 baris kosong jika kosong
+            }
+        }
+
+        function createRowHTML(index, data = { date: '', gelombang: '', sesi: '', startTime: '', endTime: '' }) {
+            return `
+                <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition-colors">
+                    <td class="p-3 text-center text-slate-400">${index + 1}</td>
+                    <td class="p-2"><input type="date" class="inp-date w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm" value="${data.date}"></td>
+                    <td class="p-2"><input type="number" min="1" class="inp-gel w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-center text-sm" value="${data.gelombang}" placeholder="Gel"></td>
+                    <td class="p-2"><input type="number" min="1" class="inp-sesi w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-center text-sm" value="${data.sesi}" placeholder="Sesi"></td>
+                    <td class="p-2"><input type="time" class="inp-start w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-center text-sm" value="${data.startTime}"></td>
+                    <td class="p-2"><input type="time" class="inp-end w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-center text-sm" value="${data.endTime}"></td>
+                    <td class="p-2 text-center">
+                        <button onclick="this.closest('tr').remove(); updateRowNumbers();" class="text-red-400 hover:text-red-300 p-2 bg-slate-900 rounded border border-slate-600 hover:border-red-400 transition-colors">
+                            <i class="ph ph-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function addScheduleRow() {
+            const tbody = document.getElementById('schedule-body');
+            const rowCount = tbody.children.length;
+            
+            // Set default date ke hari ini untuk baris baru
+            const today = new Date().toISOString().split('T')[0];
+            
+            tbody.insertAdjacentHTML('beforeend', createRowHTML(rowCount, { date: today, gelombang: '', sesi: '', startTime: '', endTime: '' }));
+            updateRowNumbers();
+        }
+
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('#schedule-body tr');
+            rows.forEach((row, idx) => {
+                row.cells[0].innerText = idx + 1;
+            });
+        }
+
+        // --- Fitur Import & Export Excel ---
+        function downloadTemplate() {
+            // Membuat data template
+            const ws_data = [
+                ["Tanggal (YYYY-MM-DD)", "Gelombang", "Sesi", "Jam Mulai (HH:mm)", "Jam Selesai (HH:mm)"],
+                ["2026-04-20", "1", "1", "07:30", "09:30"],
+                ["2026-04-20", "1", "2", "10:00", "12:00"],
+                ["2026-04-21", "2", "1", "07:30", "09:30"]
+            ];
+            
+            // Konversi ke worksheet
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            
+            // Mengatur lebar kolom agar rapi
+            ws['!cols'] = [{wch: 22}, {wch: 12}, {wch: 10}, {wch: 20}, {wch: 20}];
+
+            // Membuat workbook dan mengunduh
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Jadwal_TKA");
+            XLSX.writeFile(wb, "Template_Jadwal_TKA.xlsx");
+        }
+
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // Ambil sheet pertama
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Konversi ke format JSON (raw: false agar jam/tanggal tidak jadi angka serial Excel)
+                    const json = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+                    
+                    if (json.length === 0) {
+                        alert("File Excel kosong atau format tidak sesuai.");
+                        return;
+                    }
+
+                    // Iterasi data dan masukkan ke tabel HTML
+                    const tbody = document.getElementById('schedule-body');
+                    let addedCount = 0;
+
+                    json.forEach(row => {
+                        // Mencari key/judul kolom secara fleksibel
+                        const keys = Object.keys(row);
+                        const dateKey = keys.find(k => k.toLowerCase().includes('tanggal'));
+                        const gelKey = keys.find(k => k.toLowerCase().includes('gelombang'));
+                        const sesiKey = keys.find(k => k.toLowerCase().includes('sesi'));
+                        const startKey = keys.find(k => k.toLowerCase().includes('mulai'));
+                        const endKey = keys.find(k => k.toLowerCase().includes('selesai'));
+
+                        if(dateKey && startKey && endKey) {
+                            let rowData = {
+                                date: row[dateKey],
+                                gelombang: row[gelKey] || '1',
+                                sesi: row[sesiKey] || '1',
+                                startTime: row[startKey],
+                                endTime: row[endKey]
+                            };
+
+                            // Rapikan format jam jika Excel menambahkan detik (07:30:00 -> 07:30)
+                            if(rowData.startTime && rowData.startTime.length > 5) rowData.startTime = rowData.startTime.substring(0, 5);
+                            if(rowData.endTime && rowData.endTime.length > 5) rowData.endTime = rowData.endTime.substring(0, 5);
+                            
+                            // Validasi format tanggal sederhana (pastikan tidak undefined)
+                            if (rowData.date) {
+                                // Jika Excel mengubahnya menjadi MM/DD/YY, coba sesuaikan, tapi idealnya ikuti format YYYY-MM-DD
+                                const dateParts = rowData.date.split(/[-/]/);
+                                if (dateParts.length === 3 && dateParts[2].length === 4) {
+                                    // Berarti format DD/MM/YYYY atau MM/DD/YYYY dari excel
+                                    rowData.date = `${dateParts[2]}-${dateParts[1].padStart(2,'0')}-${dateParts[0].padStart(2,'0')}`;
+                                }
+
+                                const rowCount = tbody.children.length;
+                                tbody.insertAdjacentHTML('beforeend', createRowHTML(rowCount, rowData));
+                                addedCount++;
+                            }
+                        }
+                    });
+
+                    updateRowNumbers();
+                    
+                    // Reset input agar bisa import file yang sama lagi jika perlu
+                    document.getElementById('excel-upload').value = "";
+                    
+                    if (addedCount > 0) {
+                        alert(`${addedCount} Jadwal berhasil diimpor! Silakan periksa kembali di tabel, lalu klik 'Simpan Pengaturan'.`);
+                    } else {
+                        alert("Gagal mengimpor. Pastikan format kolom sesuai dengan Template.");
+                    }
+
+                } catch (error) {
+                    console.error("Error reading Excel:", error);
+                    alert("Terjadi kesalahan saat membaca file Excel.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- Theme Management (Mode Terang/Malam) ---
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            appState.theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+            localStorage.setItem('tka_theme', appState.theme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const icon = document.querySelector('#theme-btn i');
+            if (appState.theme === 'light') {
+                icon.classList.remove('ph-sun');
+                icon.classList.add('ph-moon');
+            } else {
+                icon.classList.remove('ph-moon');
+                icon.classList.add('ph-sun');
+            }
+        }
+
+        // Jalankan saat dokumen dimuat
+        window.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>
